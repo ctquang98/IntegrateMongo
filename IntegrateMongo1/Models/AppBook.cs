@@ -16,5 +16,10 @@ namespace IntegrateMongo1.Models
         public string Author { get; set; }
         [BsonElement("category")]
         public string Category { get; set; }
+
+        [BsonElement("categories")]
+        public List<ObjectId> CategoryIds { get; set; }
+        [BsonElement("category_docs")]
+        public List<AppCategory> Categories { get; set; }
     }
 }

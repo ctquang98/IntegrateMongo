@@ -1,6 +1,9 @@
 ﻿
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using System.Text.Json.Nodes;
 
 namespace IntegrateMongo1.Models
 {
@@ -39,7 +42,17 @@ namespace IntegrateMongo1.Models
 
         public async Task<AppBook> GetById(string id)
         {
-            return await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+            string match = "{$match: {_id: ObjectId(\"" + id + "\")}}";
+            string lookup = "{$lookup: {from: \"categories\", localField: \"categories\", foreignField: \"_id\", as: \"category_docs\"}}";
+            var aggregatePipline = new BsonDocument[]
+            {
+                BsonDocument.Parse(match),
+                BsonDocument.Parse(lookup)
+            };
+            var bsonDoc = collection.Aggregate<BsonDocument>(aggregatePipline).FirstOrDefault();
+            var result = BsonSerializer.Deserialize<AppBook>(bsonDoc);
+            return result;
+            //return await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<AppBook> Insert(AppBookDto bookDto)
