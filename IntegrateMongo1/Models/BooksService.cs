@@ -42,17 +42,58 @@ namespace IntegrateMongo1.Models
 
         public async Task<AppBook> GetById(string id)
         {
-            string match = "{$match: {_id: ObjectId(\"" + id + "\")}}";
-            string lookup = "{$lookup: {from: \"categories\", localField: \"categories\", foreignField: \"_id\", as: \"category_docs\"}}";
-            var aggregatePipline = new BsonDocument[]
+            //string match = "{$match: {_id: ObjectId(\"" + id + "\")}}";
+            //string lookup = "{$lookup: {from: \"categories\", localField: \"categories\", foreignField: \"_id\", as: \"category_docs\"}}";
+            //var aggregatePipline = new BsonDocument[]
+            //{
+            //    BsonDocument.Parse(match),
+            //    BsonDocument.Parse(lookup)
+            //};
+            //var bsonDoc = collection.Aggregate<BsonDocument>(aggregatePipline).FirstOrDefault();
+            //var result = BsonSerializer.Deserialize<AppBook>(bsonDoc);
+            //return result;
+            //return await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+
+            BsonDocument pipelineStage1 = new BsonDocument
             {
-                BsonDocument.Parse(match),
-                BsonDocument.Parse(lookup)
+                {
+                    "$match", new BsonDocument {
+                        { "_id", ObjectId.Parse(id) }
+                    }
+                }
             };
-            var bsonDoc = collection.Aggregate<BsonDocument>(aggregatePipline).FirstOrDefault();
+
+            BsonDocument pipelineStage2 = new BsonDocument
+            {
+                {
+                    "$lookup", new BsonDocument
+                    {
+                        { "from", "categories" },
+                        { "localField", "categories" },
+                        { "foreignField", "_id" },
+                        { "as", "category_docs" }
+                    }
+                }
+            };
+
+            BsonDocument pipelineStage3 = new BsonDocument
+            {
+                {
+                    "$project", new BsonDocument
+                    {
+                        { "_id", 1 },
+                        { "name", 1 },
+                        { "price", 1 },
+                        { "author", 1 },
+                        { "category_docs", 1 },
+                    }
+                }
+            };
+
+            BsonDocument[] pipepline = { pipelineStage1, pipelineStage2, pipelineStage3 };
+            var bsonDoc = await collection.Aggregate<BsonDocument>(pipepline).FirstOrDefaultAsync();
             var result = BsonSerializer.Deserialize<AppBook>(bsonDoc);
             return result;
-            //return await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<AppBook> Insert(AppBookDto bookDto)
